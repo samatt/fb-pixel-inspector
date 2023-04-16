@@ -1,0 +1,59 @@
+{
+    "title": "example.com",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1512,
+            "height": 331,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "http://example.com/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "http://example.com/",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/More information..."
+                ],
+                [
+                    "a"
+                ],
+                [
+                    "xpath//html/body/div/p[2]/a"
+                ],
+                [
+                    "pierce/a"
+                ],
+                [
+                    "text/More information..."
+                ]
+            ],
+            "offsetY": 14.125,
+            "offsetX": 90
+        },
+        {
+            "type": "navigate",
+            "url": "http://example.com/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "http://example.com/",
+                    "title": "Example Domain"
+                }
+            ]
+        }
+    ]
+}

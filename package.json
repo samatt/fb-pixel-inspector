@@ -1,0 +1,19 @@
+{
+  "name": "fb-pixel-inspector",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@puppeteer/replay": "^2.10.2",
+    "puppeteer": "^19.9.0",
+    "puppeteer-har": "^1.1.2",
+    "yargs": "^17.7.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Surya Mattu",
+  "license": "ISC",
+  "description": ""
+}
