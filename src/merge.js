@@ -11,8 +11,13 @@ export const updateHarEntries = (
     // If this _requestId look up errors it might be because of amismatch
     // between the network requests captured by the har file and those captured by cdpRequestDataRaw
     // This would be sketchy and should be inspected further.
-    const { _requestId } = e;
 
+    const { _requestId } = e;
+    if (!_requestId) {
+      console.error("couldnt find id");
+      console.error(e);
+      return e;
+    }
     try {
       const cookies = cdpRequestDataRaw[_requestId][
         "Network.requestWillBeSentExtraInfo"
