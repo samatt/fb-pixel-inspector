@@ -18,7 +18,7 @@ const argv = yargs(hideBin(process.argv))
         .positional("session_folder", {
           describe: "path you want to save capture artifacts tos ",
           type: "string",
-          default: "data/session",
+          default: "",
         })
         .positional("browser_profile_path", {
           describe: "path to the browser profile",
@@ -45,9 +45,16 @@ const argv = yargs(hideBin(process.argv))
 
 async function runHandler(argv) {
   const recording_path = path.resolve(argv.recording_path);
-  const session_path = path.resolve(argv.session_folder);
+
+  let session_path = "";
+  if (argv.session_folder === "") {
+    const session_name = path.parse(recording_path).name;
+    session_path = path.resolve(`data/${session_name}`);
+  } else {
+    session_path = path.resolve("data/session");
+  }
+
   const browser_profile_path = path.resolve(argv.browser_profile_path);
-  fs.copyFileSync(recording_path, `${session_path}/recording.json`);
   console.log(`Run recording: ${argv.recording_path}`);
   if (!fs.existsSync(session_path)) {
     fs.mkdirSync(session_path);
@@ -55,6 +62,7 @@ async function runHandler(argv) {
   } else {
     console.log(`Folder '${session_path}' already exists.`);
   }
+  fs.copyFileSync(recording_path, `${session_path}/recording.json`);
 
   await runChromeRecording(recording_path, session_path, browser_profile_path);
 
