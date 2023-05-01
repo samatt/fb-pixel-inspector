@@ -3,3 +3,7 @@ browser-profile/
 archive/
 data/in/citp-recording.json
 data/*
+test-fb.json
+error.log
+test.json
+combined.log

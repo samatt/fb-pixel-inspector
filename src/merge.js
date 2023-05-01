@@ -14,8 +14,8 @@ export const updateHarEntries = (
 
     const { _requestId } = e;
     if (!_requestId) {
-      console.error("couldnt find id");
-      console.error(e);
+      logger.warn("Request ID not found in object", e)=
+      logger.error(e);
       return e;
     }
     try {
@@ -30,8 +30,7 @@ export const updateHarEntries = (
         .map((c) => c.cookie);
       e.request.cookies = cookies;
     } catch (error) {
-      console.log("Couldnt update network entries in HAR file");
-      console.error(error);
+      logger.error("HAR merge failed", error);
     }
 
     return e;

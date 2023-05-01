@@ -1,0 +1,77 @@
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Meta Pixel Inspection Report</title>
+    <meta
+      name="description"
+      content="Report describing meta pixel tracking events found on a website"
+    />
+  </head>
+  <style>
+    img { max-width: 60%; margin: auto; }
+  </style>
+  <body>
+    <h1>Page Visited</h1>
+    <p> {{url}}</p>
+    {{#each screenshots}}
+      {{#if @first}} <img src="{{this}}" /> {{/if}}
+    {{/each}}
+
+    {{#each fbEvents}}
+
+      <h2> Event Name: {{rawEventData.ev}}</h2>
+      <table>
+        <thead>
+          <tr>
+              <th>Key</th>
+              <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each rawEventData}}
+            <tr>
+                <td>{{@key}}</td>
+                <td>{{@this}}</td>
+
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      {{!-- <div> Request Type: {{rawEventData.rqm}}</div> --}}
+      {{#if customData}}
+        {{! <div>
+          This event contains
+          <a
+            href="https://developers.facebook.com/docs/meta-pixel/implementation/custom-audiences"
+          >custom data parameters. </a>: Developers and marketers can optionally
+          choose to send additional information about the visit through Custom
+          Data events. Example custom data events are conversion value, page
+          type and more". Typical examples include what content the visitor
+          viewed on the site or how far down the page they scrolled. These
+          events can be used to create custom audiences for Facebook ad
+          targeting.
+        </div> }}
+
+          <table>
+          <thead>
+            <tr>
+                <th>Custom Data Label</th>
+                <th> Custom Data Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each customData}}
+              <tr>
+                  <td>{{@this.name}}</td>
+                  <td>{{@this.value}}</td>
+
+              </tr>
+            {{/each}}
+          </tbody>
+          </table>
+      {{/if}}
+    {{/each}}
+  </body>
+
+</html>
