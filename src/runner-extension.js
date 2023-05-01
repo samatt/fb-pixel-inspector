@@ -55,8 +55,9 @@ export async function runChromeRecording(
     async afterEachStep(step, flow) {
       await super.afterEachStep(step, flow);
       const screenshot = path.join(
-        SCREENSHOT_FOLDER
-      )`${STEP_COUNT}-${step.type}.jpg`;
+        SCREENSHOT_FOLDER,
+        `${STEP_COUNT}-${step.type}.jpg`
+      );
       await this.page.screenshot({
         path: screenshot,
       });
@@ -97,7 +98,7 @@ export async function runChromeRecording(
     if (urls_for_download.some((url) => event.url().includes(url))) {
       console.log(event.url());
       // console.log(headers["content-type"]);
-      const headers = event.headers();
+      // const headers = event.headers();
       const body = (await event.buffer()).toString("utf-8");
       sourceMap.set(event.url(), body);
     }

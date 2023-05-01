@@ -69,10 +69,6 @@ function getFBTrackingEvents(harData) {
 }
 export function generateReport(sesson_path, reportData) {
   const REPORTS_FOLDER = path.join(sesson_path, "reports");
-  // if (!fs.existsSync(REPORTS_FOLDER)) {
-  //   fs.mkdirSync(REPORTS_FOLDER);
-  //   console.log(`Folder '${REPORTS_FOLDER}' created successfully.`);
-  // }
   const reports = reportData.map((x) => template(x));
   reports.forEach((element, index) => {
     fs.writeFileSync(path.join(REPORTS_FOLDER, `${index}.html`), element);
@@ -80,7 +76,6 @@ export function generateReport(sesson_path, reportData) {
 }
 export function runAnalysis(session_path) {
   const SESSION_PATH = session_path;
-
   const harData = JSON.parse(
     fs.readFileSync(
       path.join(SESSION_PATH, "raw", "requests-merged.har"),
@@ -114,7 +109,6 @@ export function runAnalysis(session_path) {
   }, []);
   return reportData;
 }
-
 // FIXME: Using runner-log log instead of recording.json to
 // function generateReportOld(recordingData, harData) {
 //   const fbTrackingEvents = harData.log.entries
