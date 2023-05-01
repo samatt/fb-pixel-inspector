@@ -78,10 +78,10 @@ async function runHandler(argv) {
   } else {
     console.log(`Folder '${session_path}' already exists.`);
   }
+
   fs.copyFileSync(recording_path, `${session_path}/recording.json`);
-
   await runChromeRecording(recording_path, session_path, browser_profile_path);
-
+  await analysisHandler({ session_path });
   return Promise.resolve();
 }
 
@@ -91,7 +91,8 @@ async function loginHandler(argv) {
 }
 async function analysisHandler(argv) {
   const { session_folder } = argv;
-  // console.log("here");
+  console.log("Analyze data");
   const reportData = runAnalysis(session_folder);
+  console.log("Generate reports");
   generateReport(session_folder, reportData);
 }
