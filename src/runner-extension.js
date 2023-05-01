@@ -5,6 +5,7 @@ import fs from "fs";
 import url from "url";
 import path from "path";
 import { updateHarEntries } from "./merge.js";
+import { logger } from "./logger.js";
 
 // Returns map of request ID to raw CDP request data. This will be populated as requests are made.
 // See: https://itecnote.com/tecnote/missing-request-headers-in-puppeteer/
@@ -45,7 +46,7 @@ export async function runChromeRecording(
   class Extension extends PuppeteerRunnerExtension {
     async beforeAllSteps(flow) {
       await super.beforeAllSteps(flow);
-      console.log("starting");
+      logger.debug("Replaying recording");
     }
 
     async beforeEachStep(step, flow) {
@@ -62,7 +63,7 @@ export async function runChromeRecording(
         path: screenshot,
       });
 
-      console.log({
+      logger.debug("step complete", {
         stepCount: STEP_COUNT,
         url: this.page.url(),
         stepType: step.type,
@@ -79,7 +80,7 @@ export async function runChromeRecording(
 
     async afterAllSteps(flow) {
       await super.afterAllSteps(flow);
-      console.log("done");
+      logger.debug("Replay complete");
     }
   }
 
@@ -96,9 +97,6 @@ export async function runChromeRecording(
   const sourceMap = new Map();
   await page.on("response", async (event) => {
     if (urls_for_download.some((url) => event.url().includes(url))) {
-      console.log(event.url());
-      // console.log(headers["content-type"]);
-      // const headers = event.headers();
       const body = (await event.buffer()).toString("utf-8");
       sourceMap.set(event.url(), body);
     }
@@ -136,7 +134,7 @@ export async function runChromeRecording(
       root_folder,
       folders
     );
-    console.log(`saving: ${path.join(save_dir, file_name)}`);
+    logger.debug("Saving file:", { savedFile: path.join(save_dir, file_name) });
     fs.mkdirSync(save_dir, { recursive: true });
     fs.writeFileSync(path.join(save_dir, file_name), value);
   }

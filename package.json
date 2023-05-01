@@ -8,6 +8,7 @@
     "handlebars": "^4.7.7",
     "puppeteer": "^19.9.0",
     "puppeteer-har": "^1.1.2",
+    "winston": "^3.8.2",
     "yargs": "^17.7.1"
   },
   "scripts": {

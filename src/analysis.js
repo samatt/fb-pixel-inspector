@@ -2,6 +2,7 @@ import fs from "fs";
 import querystring from "node:querystring";
 import Handlebars from "handlebars";
 import path from "path";
+import { logger } from "./logger.js";
 
 const parseMultipartFormData = (data) => {
   const parts = data.split(/-{5}[\w\d]+/).filter(Boolean);
@@ -36,7 +37,6 @@ function parseFBPixelEvent(harObject) {
       return acc;
     }, {});
   } else {
-    // console.log(harObject.request.postData);
     if (harObject.request.postData.mimeType.includes("x-www-form-urlencoded")) {
       rawEventData = querystring.decode(harObject.request.postData.text);
     } else if (
@@ -44,7 +44,9 @@ function parseFBPixelEvent(harObject) {
     ) {
       rawEventData = parseMultipartFormData(harObject.request.postData.text);
     } else {
-      console.error(`No parser for MIME TYPE ${harObject.request.mimeType}`);
+      logger.warn("No parser found for mimeType", {
+        mimeTyoe: harObject.request.postData.mimeType,
+      });
     }
   }
   const customData = Object.entries(rawEventData)
@@ -70,6 +72,10 @@ function getFBTrackingEvents(harData) {
 export function generateReport(sesson_path, reportData) {
   const REPORTS_FOLDER = path.join(sesson_path, "reports");
   const reports = reportData.map((x) => template(x));
+  logger.info("WRITE REPORTS", {
+    numPages: reports.length,
+    reportsPath: REPORTS_FOLDER,
+  });
   reports.forEach((element, index) => {
     fs.writeFileSync(path.join(REPORTS_FOLDER, `${index}.html`), element);
   });
@@ -93,13 +99,18 @@ export function runAnalysis(session_path) {
   ];
 
   const fbTrackingEvents = getFBTrackingEvents(harData);
+  logger.info("RUN ANALYSIS", {
+    totalEvents: fbTrackingEvents.length,
+    totalUrls: urlsVisited.length,
+  });
+
   fs.writeFileSync("test-fb.json", JSON.stringify(fbTrackingEvents, null, 2));
+
   const reportData = urlsVisited.reduce((acc, url) => {
     const fbEvents = fbTrackingEvents.filter((x) => x.rawEventData.dl === url);
     const screenshots = runLog
       .filter((x) => x.url == url)
       .map((x) => x.screenshot);
-    // console.log({ fbEvents, screenshots });
     acc.push({
       url,
       fbEvents,
