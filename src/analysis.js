@@ -3,6 +3,7 @@ import querystring from "node:querystring";
 import Handlebars from "handlebars";
 import path from "path";
 import { logger } from "./logger.js";
+import puppeteer from "puppeteer";
 
 const parseMultipartFormData = (data) => {
   const parts = data.split(/-{5}[\w\d]+/).filter(Boolean);
@@ -69,17 +70,7 @@ function getFBTrackingEvents(harData) {
     .filter((x) => x.request.url.includes("facebook.com/tr"))
     .map((x) => parseFBPixelEvent(x));
 }
-export function generateReport(sesson_path, reportData) {
-  const REPORTS_FOLDER = path.join(sesson_path, "reports");
-  const reports = reportData.map((x) => template(x));
-  logger.info("WRITE REPORTS", {
-    numPages: reports.length,
-    reportsPath: REPORTS_FOLDER,
-  });
-  reports.forEach((element, index) => {
-    fs.writeFileSync(path.join(REPORTS_FOLDER, `${index}.html`), element);
-  });
-}
+
 export function runAnalysis(session_path) {
   const SESSION_PATH = session_path;
   const harData = JSON.parse(
@@ -104,22 +95,54 @@ export function runAnalysis(session_path) {
     totalUrls: urlsVisited.length,
   });
 
-  fs.writeFileSync("test-fb.json", JSON.stringify(fbTrackingEvents, null, 2));
-
   const reportData = urlsVisited.reduce((acc, url) => {
     const fbEvents = fbTrackingEvents.filter((x) => x.rawEventData.dl === url);
     const screenshots = runLog
       .filter((x) => x.url == url)
       .map((x) => x.screenshot);
+    const screenshotsRel = runLog
+      .filter((x) => x.url == url)
+      .map((x) => path.relative(SESSION_PATH, x.screenshot));
     acc.push({
       url,
       fbEvents,
       screenshots,
+      screenshotsRel,
     });
     return acc;
   }, []);
+  fs.writeFileSync(
+    path.join(SESSION_PATH, "raw", "report.json"),
+    JSON.stringify(reportData, null, 2)
+  );
   return reportData;
 }
+
+export async function generateReport(session_path, reportData) {
+  logger.info("WRITE REPORTS", {
+    numPages: reportData.length,
+  });
+  const report = template({ pages: reportData });
+  fs.writeFileSync(path.join(session_path, `inspection-report.html`), report);
+  await printPDF(session_path);
+}
+
+async function printPDF(session_path) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(
+    `file:///${path.resolve(
+      path.join(session_path, "inspection-report.html")
+    )}`,
+    {
+      waitUntil: "networkidle2",
+    }
+  );
+  await page.pdf({ path: path.join(session_path, `inspection-report.pdf`) });
+  await browser.close();
+}
+
+////////
 // FIXME: Using runner-log log instead of recording.json to
 // function generateReportOld(recordingData, harData) {
 //   const fbTrackingEvents = harData.log.entries

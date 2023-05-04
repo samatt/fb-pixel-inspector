@@ -1,6 +1,7 @@
 // Puppeteer by default doesn't include cookie headers in network requests. (unclear why)
 // This function adds cookie header data to the HAR file network requests as described here:
 // https://itecnote.com/tecnote/missing-request-headers-in-puppeteer/
+import { logger } from "./logger.js";
 
 export const updateHarEntries = (
   harFile,
