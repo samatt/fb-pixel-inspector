@@ -1,6 +1,7 @@
 // Puppeteer by default doesn't include cookie headers in network requests. (unclear why)
 // This function adds cookie header data to the HAR file network requests as described here:
 // https://itecnote.com/tecnote/missing-request-headers-in-puppeteer/
+import { logger } from "./logger.js";
 
 export const updateHarEntries = (
   harFile,
@@ -14,8 +15,13 @@ export const updateHarEntries = (
 
     const { _requestId } = e;
     if (!_requestId) {
-      logger.warn("Request ID not found in object", e)=
+      logger.warn("Request ID not found in object", e);
       logger.error(e);
+      return e;
+    }
+
+    if (!(_requestId in cdpRequestDataRaw)) {
+      logger.warn(`${_requestId} not found in cdp requests, skipping merge`);
       return e;
     }
     try {
@@ -31,6 +37,7 @@ export const updateHarEntries = (
       e.request.cookies = cookies;
     } catch (error) {
       logger.error("HAR merge failed", error);
+      logger.warn(`Keys in ${_requestId}`, cdpRequestDataRaw[_requestId]);
     }
 
     return e;

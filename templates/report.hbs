@@ -1,77 +1,145 @@
 <html>
 
-  <head>
-    <meta charset="utf-8" />
-    <title>Meta Pixel Inspection Report</title>
-    <meta
-      name="description"
-      content="Report describing meta pixel tracking events found on a website"
-    />
-  </head>
-  <style>
-    img { max-width: 60%; margin: auto; }
-  </style>
-  <body>
-    <h1>Page Visited</h1>
-    <p> {{url}}</p>
-    {{#each screenshots}}
-      {{#if @first}} <img src="{{this}}" /> {{/if}}
+<head>
+  <meta charset="utf-8" />
+  <title>Meta Pixel Inspection Report</title>
+  <meta name="description" content="Report describing meta pixel tracking events found on a website" />
+  <link rel="stylesheet" href="https://unpkg.com/simpledotcss/simple.css">
+
+</head>
+<style>
+  img {
+    max-width: 90%;
+  }
+</style>
+
+<body>
+  <h1> Meta Pixel Inspection</h1>
+ <p> The following pages were visited during this inspection:</p>
+  <ul>
+    {{#each pages}}
+    <li>
+      <a href="#page-{{@key}}"> {{url}} </a>
+    </li>
     {{/each}}
+  </ul>
+
+  {{#each pages}}
+  <article id="page-{{@key}}">
+    <header>
+      <h3> <a href="{{url}}">{{url}}</a> </h3>
+    </header>
+
+    {{#each screenshots}}
+    {{#if @first}}
+    <figure>
+      <img src="{{this}}" />
+      <figcaption>Screenshot from the time of inspection</figcaption>
+    </figure>
+    {{/if}}
+    {{/each}}
+
+    <p> <mark> {{fbEvents.length}} Meta Pixel events </mark> were sent from this page.</p>
 
     {{#each fbEvents}}
 
-      <h2> Event Name: {{rawEventData.ev}}</h2>
+    <details>
+    <summary>
+      <strong> {{rawEventData.ev}}</strong>
+
+    </summary>
+    {{#if hasC_UserCookie}}
+      <p>  <em> The c_user cookie was sent with this event. </em></p>
+    {{/if}}    
       <table>
         <thead>
           <tr>
-              <th>Key</th>
-              <th>Value</th>
+            <th>Key</th>
+            <th>Value</th>
           </tr>
         </thead>
         <tbody>
           {{#each rawEventData}}
-            <tr>
-                <td>{{@key}}</td>
-                <td>{{@this}}</td>
+          <tr>
+            <td>{{@key}}</td>
+            <td>{{@this}}</td>
 
-            </tr>
+          </tr>
           {{/each}}
         </tbody>
       </table>
-      {{!-- <div> Request Type: {{rawEventData.rqm}}</div> --}}
-      {{#if customData}}
-        {{! <div>
-          This event contains
-          <a
-            href="https://developers.facebook.com/docs/meta-pixel/implementation/custom-audiences"
-          >custom data parameters. </a>: Developers and marketers can optionally
-          choose to send additional information about the visit through Custom
-          Data events. Example custom data events are conversion value, page
-          type and more". Typical examples include what content the visitor
-          viewed on the site or how far down the page they scrolled. These
-          events can be used to create custom audiences for Facebook ad
-          targeting.
-        </div> }}
-
-          <table>
-          <thead>
-            <tr>
-                <th>Custom Data Label</th>
-                <th> Custom Data Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each customData}}
-              <tr>
-                  <td>{{@this.name}}</td>
-                  <td>{{@this.value}}</td>
-
-              </tr>
-            {{/each}}
-          </tbody>
-          </table>
-      {{/if}}
+    </details>
     {{/each}}
-  </body>
+    <footer>
+      <small>
+      The tables above list the data transmitted to Meta's servers with each Pixel event.
+      For more information about the event data parameters please see <a
+        href="https://themarkup.org/show-your-work/2022/04/28/how-we-built-a-meta-pixel-inspector#event-data-details">
+        The Markup's Pixel Hunt.</a>
+    </small>
+    </footer>
+  </article>
+
+  {{/each}}
+</body>
 
 </html>
+
+{{!-- <p> {{url}}</p>
+{{#each screenshots}}
+{{#if @first}} <img src="{{this}}" /> {{/if}}
+{{/each}}
+
+{{#each fbEvents}}
+
+<h2> Event Name: {{rawEventData.ev}}</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rawEventData}}
+    <tr>
+      <td>{{@key}}</td>
+      <td>{{@this}}</td>
+
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+{{!-- <div> Request Type: {{rawEventData.rqm}}</div> --}}
+{{!-- {{#if customData}} --}}
+{{! <div>
+  This event contains
+  <a href="https://developers.facebook.com/docs/meta-pixel/implementation/custom-audiences">custom data parameters.
+  </a>: Developers and marketers can optionally
+  choose to send additional information about the visit through Custom
+  Data events. Example custom data events are conversion value, page
+  type and more". Typical examples include what content the visitor
+  viewed on the site or how far down the page they scrolled. These
+  events can be used to create custom audiences for Facebook ad
+  targeting.
+</div> }}
+
+{{!-- <table>
+  <thead>
+    <tr>
+      <th>Custom Data Label</th>
+      <th> Custom Data Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each customData}}
+    <tr>
+      <td>{{@this.name}}</td>
+      <td>{{@this.value}}</td>
+
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+{{/if}}
+{{/each}} --}}

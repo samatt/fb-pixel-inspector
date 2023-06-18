@@ -3,6 +3,7 @@ import querystring from "node:querystring";
 import Handlebars from "handlebars";
 import path from "path";
 import { logger } from "./logger.js";
+import puppeteer from "puppeteer";
 
 const parseMultipartFormData = (data) => {
   const parts = data.split(/-{5}[\w\d]+/).filter(Boolean);
@@ -55,10 +56,11 @@ function parseFBPixelEvent(harObject) {
   const advMatch = Object.entries(rawEventData)
     .filter((x) => x[0].includes("ud["))
     .map((x) => ({ name: x[0], value: x[1] }));
-
+  const hasC_UserCookie = cookies.some((x) => x["name"] === "c_user");
   return {
     method,
     cookies,
+    hasC_UserCookie,
     rawEventData,
     customData,
     advMatch,
@@ -69,17 +71,7 @@ function getFBTrackingEvents(harData) {
     .filter((x) => x.request.url.includes("facebook.com/tr"))
     .map((x) => parseFBPixelEvent(x));
 }
-export function generateReport(sesson_path, reportData) {
-  const REPORTS_FOLDER = path.join(sesson_path, "reports");
-  const reports = reportData.map((x) => template(x));
-  logger.info("WRITE REPORTS", {
-    numPages: reports.length,
-    reportsPath: REPORTS_FOLDER,
-  });
-  reports.forEach((element, index) => {
-    fs.writeFileSync(path.join(REPORTS_FOLDER, `${index}.html`), element);
-  });
-}
+
 export function runAnalysis(session_path) {
   const SESSION_PATH = session_path;
   const harData = JSON.parse(
@@ -95,7 +87,15 @@ export function runAnalysis(session_path) {
     .map((x) => JSON.parse(x));
 
   const urlsVisited = [
-    ...new Set(runLog.map((x) => x.url).filter((x) => x !== "about:blank")),
+    ...new Set(
+      runLog
+        .map((x) => x.url)
+        .filter((x) => x !== "about:blank")
+        .map((x) => {
+          const url = new URL(x);
+          return `${url.hostname}${url.pathname}`;
+        })
+    ),
   ];
 
   const fbTrackingEvents = getFBTrackingEvents(harData);
@@ -103,23 +103,70 @@ export function runAnalysis(session_path) {
     totalEvents: fbTrackingEvents.length,
     totalUrls: urlsVisited.length,
   });
-
-  fs.writeFileSync("test-fb.json", JSON.stringify(fbTrackingEvents, null, 2));
-
+  // TODO: Dig into to see if it works correctly in all cases
+  // currently I manually reconstruct the full url path withour parameteres to do the match.
   const reportData = urlsVisited.reduce((acc, url) => {
-    const fbEvents = fbTrackingEvents.filter((x) => x.rawEventData.dl === url);
+    const fbEvents = fbTrackingEvents.filter((x) => {
+      const dl = new URL(x.rawEventData.dl);
+      return `${dl.hostname}${dl.pathname}` === url;
+    });
     const screenshots = runLog
-      .filter((x) => x.url == url)
+      .filter((x) => {
+        const y = new URL(x.url);
+        return `${y.hostname}${y.pathname}` === url;
+      })
       .map((x) => x.screenshot);
+    const screenshotsRel = runLog
+      .filter((x) => {
+        const y = new URL(x.url);
+        return `${y.hostname}${y.pathname}` === url;
+      })
+      .map((x) => path.relative(SESSION_PATH, x.screenshot));
     acc.push({
       url,
       fbEvents,
       screenshots,
+      screenshotsRel,
     });
     return acc;
   }, []);
+  fs.writeFileSync(
+    path.join(SESSION_PATH, "raw", "report.json"),
+    JSON.stringify(reportData, null, 2)
+  );
   return reportData;
 }
+
+export async function generateReport(session_path, reportData) {
+  logger.info("WRITE REPORTS", {
+    numPages: reportData.length,
+  });
+  const report = template({ pages: reportData });
+  fs.writeFileSync(path.join(session_path, `inspection-report.html`), report);
+  await printPDF(session_path);
+}
+
+async function printPDF(session_path) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(
+    `file:///${path.resolve(
+      path.join(session_path, "inspection-report.html")
+    )}`,
+    {
+      waitUntil: "networkidle0",
+    }
+  );
+  // await page.emulateMediaType("screen");
+  await page.pdf({
+    path: path.join(session_path, `inspection-report.pdf`),
+    printBackground: true,
+    format: "A3",
+  });
+  await browser.close();
+}
+
+////////
 // FIXME: Using runner-log log instead of recording.json to
 // function generateReportOld(recordingData, harData) {
 //   const fbTrackingEvents = harData.log.entries

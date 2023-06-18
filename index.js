@@ -45,10 +45,10 @@ const argv = yargs(hideBin(process.argv))
     handler: loginHandler,
   })
   .command({
-    command: "analysis [session_folder]",
+    command: "analysis [session_path]",
     describe: "Analyse recorded session",
     builder: (yargs) => {
-      return yargs.positional("session_folder", {
+      return yargs.positional("session_path", {
         describe: "path to recorded session ",
         type: "string",
         default: "",
@@ -96,5 +96,5 @@ async function loginHandler(argv) {
 async function analysisHandler(argv) {
   const { session_path } = argv;
   const reportData = runAnalysis(session_path);
-  generateReport(session_path, reportData);
+  await generateReport(session_path, reportData);
 }
