@@ -40,12 +40,17 @@
     {{/each}}
 
     <p> <mark> {{fbEvents.length}} Meta Pixel events </mark> were sent from this page.</p>
+
     {{#each fbEvents}}
 
     <details>
     <summary>
       <strong> {{rawEventData.ev}}</strong>
+
     </summary>
+    {{#if hasC_UserCookie}}
+      <p>  <em> The c_user cookie was sent with this event. </em></p>
+    {{/if}}    
       <table>
         <thead>
           <tr>

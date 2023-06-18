@@ -16,5 +16,8 @@
   },
   "author": "Surya Mattu",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
 }

@@ -56,10 +56,11 @@ function parseFBPixelEvent(harObject) {
   const advMatch = Object.entries(rawEventData)
     .filter((x) => x[0].includes("ud["))
     .map((x) => ({ name: x[0], value: x[1] }));
-
+  const hasC_UserCookie = cookies.some((x) => x["name"] === "c_user");
   return {
     method,
     cookies,
+    hasC_UserCookie,
     rawEventData,
     customData,
     advMatch,
@@ -86,7 +87,15 @@ export function runAnalysis(session_path) {
     .map((x) => JSON.parse(x));
 
   const urlsVisited = [
-    ...new Set(runLog.map((x) => x.url).filter((x) => x !== "about:blank")),
+    ...new Set(
+      runLog
+        .map((x) => x.url)
+        .filter((x) => x !== "about:blank")
+        .map((x) => {
+          const url = new URL(x);
+          return `${url.hostname}${url.pathname}`;
+        })
+    ),
   ];
 
   const fbTrackingEvents = getFBTrackingEvents(harData);
@@ -94,14 +103,24 @@ export function runAnalysis(session_path) {
     totalEvents: fbTrackingEvents.length,
     totalUrls: urlsVisited.length,
   });
-
+  // TODO: Dig into to see if it works correctly in all cases
+  // currently I manually reconstruct the full url path withour parameteres to do the match.
   const reportData = urlsVisited.reduce((acc, url) => {
-    const fbEvents = fbTrackingEvents.filter((x) => x.rawEventData.dl === url);
+    const fbEvents = fbTrackingEvents.filter((x) => {
+      const dl = new URL(x.rawEventData.dl);
+      return `${dl.hostname}${dl.pathname}` === url;
+    });
     const screenshots = runLog
-      .filter((x) => x.url == url)
+      .filter((x) => {
+        const y = new URL(x.url);
+        return `${y.hostname}${y.pathname}` === url;
+      })
       .map((x) => x.screenshot);
     const screenshotsRel = runLog
-      .filter((x) => x.url == url)
+      .filter((x) => {
+        const y = new URL(x.url);
+        return `${y.hostname}${y.pathname}` === url;
+      })
       .map((x) => path.relative(SESSION_PATH, x.screenshot));
     acc.push({
       url,
@@ -135,10 +154,15 @@ async function printPDF(session_path) {
       path.join(session_path, "inspection-report.html")
     )}`,
     {
-      waitUntil: "networkidle2",
+      waitUntil: "networkidle0",
     }
   );
-  await page.pdf({ path: path.join(session_path, `inspection-report.pdf`) });
+  // await page.emulateMediaType("screen");
+  await page.pdf({
+    path: path.join(session_path, `inspection-report.pdf`),
+    printBackground: true,
+    format: "A3",
+  });
   await browser.close();
 }
 

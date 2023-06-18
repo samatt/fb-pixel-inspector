@@ -79,6 +79,11 @@ export async function runChromeRecording(
     }
 
     async afterAllSteps(flow) {
+      await this.page.evaluate(async () => {
+        await new Promise(function (resolve) {
+          setTimeout(resolve, 10000);
+        });
+      });
       await super.afterAllSteps(flow);
       logger.debug("Replay complete");
     }
@@ -86,7 +91,7 @@ export async function runChromeRecording(
 
   const recording = JSON.parse(fs.readFileSync(recording_path, "utf-8"));
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     userDataDir: browser_profile_path,
   });
 
@@ -101,9 +106,10 @@ export async function runChromeRecording(
       sourceMap.set(event.url(), body);
     }
   });
+  const RUN_TIMEOUT = 50000;
   const runner = await createRunner(
     recording,
-    new Extension(browser, page, 7000)
+    new Extension(browser, page, RUN_TIMEOUT)
   );
 
   await har.start({ path: path.join(RAW_DATA_FOLDER, `requests-raw.har`) });
@@ -115,7 +121,13 @@ export async function runChromeRecording(
   const harFile = JSON.parse(
     fs.readFileSync(path.join(RAW_DATA_FOLDER, `requests-raw.har`), "utf-8")
   );
+
+  fs.writeFileSync(
+    path.join(RAW_DATA_FOLDER, `requests-cdp.har`),
+    JSON.stringify(cdpRequestDataRaw)
+  );
   // Merge HAR file with network activity to add cookies
+
   const mergedHAR = updateHarEntries(harFile, cdpRequestDataRaw);
   fs.writeFileSync(
     path.join(RAW_DATA_FOLDER, `requests-merged.har`),
