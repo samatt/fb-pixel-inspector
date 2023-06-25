@@ -1,5 +1,6 @@
 import querystring from "node:querystring";
 import { logger } from "./logger.js";
+import { writeFileSync } from "node:fs";
 
 const parseMultipartFormData = (data) => {
   const parts = data.split(/-{5}[\w\d]+/).filter(Boolean);
@@ -13,84 +14,81 @@ const parseMultipartFormData = (data) => {
 
     const key = keyMatch[1];
     const val = value.replace(/\r?\n?-$/, "");
-    // result[key] = val;
+
     result.push({ name: key, value: val });
   });
 
   return result;
 };
 
-function postDataParser(harObject) {
-  if (harObject.request.bodySize == 0) {
+function postDataParser(harEntry) {
+  if (harEntry.request.bodySize == 0) {
     logger.debug("Not parsing post body since body size is 0");
     return {};
   }
 
-  if (harObject.request.postData.mimeType.includes("x-www-form-urlencoded")) {
+  if (harEntry.request.postData.mimeType.includes("x-www-form-urlencoded")) {
     return Object.entries(
-      querystring.decode(harObject.request.postData.text)
+      querystring.decode(harEntry.request.postData.text)
     ).map((x) => ({ name: x[0], value: x[1] }));
   } else if (
-    harObject.request.postData.mimeType.includes("multipart/form-data")
+    harEntry.request.postData.mimeType.includes("multipart/form-data")
   ) {
-    return parseMultipartFormData(harObject.request.postData.text);
-  } else if (harObject.request.postData.mimeType.includes("application/json")) {
-    return JSON.parse(harObject.request.postData.text);
+    return parseMultipartFormData(harEntry.request.postData.text);
+  } else if (harEntry.request.postData.mimeType.includes("application/json")) {
+    return JSON.parse(harEntry.request.postData.text);
   } else {
     logger.warn(
-      `No parser found for mimeType ${harObject.request.postData.mimeType}`
+      `No parser found for mimeType ${harEntry.request.postData.mimeType}`
     );
     return {
-      error: `No parser found for mimeType ${harObject.request.postData.mimeType}`,
+      error: `No parser found for mimeType ${harEntry.request.postData.mimeType}`,
     };
   }
 }
 
-function requestParser(harObject) {
-  const { request } = harObject;
+function requestParser(harEntry) {
+  const { request } = harEntry;
   const url = new URL(request.url);
   return {
-    reqURLRaw: request.url,
-    reqURLClean: `${url.hostname}${url.pathname}`,
-    reqURLHost: url.hostname,
-    reqURLPath: url.pathname,
-    reqURLParams: request.queryString,
-    reqBodySize: request.bodySize,
-    reqMethod: request.method,
-    reqCookies: request.cookies,
-    reqHeaders: request.headers,
-    reqPostData: request.method === "POST" ? postDataParser(harObject) : {},
+    "req.urlRaw": request.url,
+    "req.urlClean": `${url.hostname}${url.pathname}`,
+    "req.urlHost": url.hostname,
+    "req.urlPath": url.pathname,
+    "req.urlParams": request.queryString,
+    "req.bodySize": request.bodySize,
+    "req.method": request.method,
+    "req.cookies": request.cookies,
+    "req.headers": request.headers,
+    "req.postData": request.method === "POST" ? postDataParser(harEntry) : {},
   };
 }
 
-export function parseHARObject(harObject) {
-  const requestId = harObject._requestId;
-  const req = requestParser(harObject);
-  // _requestId: '23575.3046',
-  //   _initiator
-  //   _requestTime
-
-  // if (harObject.request.postData.mimeType.includes("x-www-form-urlencoded")) {
-  //   rawEventData = querystring.decode(harObject.request.postData.text);
-  // } else if (
-  //   harObject.request.postData.mimeType.includes("multipart/form-data")
-  // ) {
-  //   rawEventData = parseMultipartFormData(harObject.request.postData.text);
-  // } else {
-  //   logger.warn("No parser found for mimeType", {
-  //     mimeTyoe: harObject.request.postData.mimeType,
-  //   });
-  // }
-  //   }
-  //   const customData = Object.entries(rawEventData)
-  //     .filter((x) => x[0].includes("cd["))
-  //     .map((x) => ({ name: x[0], value: x[1] }));
-  //   const advMatch = Object.entries(rawEventData)
-  //     .filter((x) => x[0].includes("ud[") || x[0].includes("udff["))
-  //     .map((x) => ({ name: x[0], value: x[1] }));
-  //   const hasC_UserCookie = cookies.some((x) => x["name"] === "c_user");
+function responseParser(harEntry) {
+  const { response } = harEntry;
   return {
-    requestId,
-    ...req,
+    "resp.httpVersion": response.httpVersion,
+    "resp.redirectURL": response.redirectURL,
+    "resp.status": response.status,
+    "resp.statusText": response.statusText,
+    "resp.content": response.content,
+    // "head.ersSize": -1,
+    "resp.bodySize": response.bodySize,
+    "resp.cookies": response.cookies,
+    "resp.headers": response.headers,
   };
+}
+
+export function parseHARObject(harEntry) {
+  const requestId = harEntry._requestId;
+  return {
+    "req.id": requestId,
+    ...requestParser(harEntry),
+    ...responseParser(harEntry),
+  };
+}
+
+export function harParser(harFile) {
+  const { entries } = harFile.log;
+  return entries.map((x) => parseHARObject(x));
 }
