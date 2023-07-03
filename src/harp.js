@@ -26,7 +26,9 @@ function postDataParser(harEntry) {
     logger.debug("Not parsing post body since body size is 0");
     return {};
   }
-
+  if (harEntry.request.postData.mimeType.includes("text/plain")) {
+    return { text: harEntry.request.postData.text };
+  }
   if (harEntry.request.postData.mimeType.includes("x-www-form-urlencoded")) {
     return Object.entries(
       querystring.decode(harEntry.request.postData.text)
@@ -92,3 +94,51 @@ export function harParser(harFile) {
   const { entries } = harFile.log;
   return entries.map((x) => parseHARObject(x));
 }
+
+export function stringifyEntry(parsedHAR) {
+  return {
+    "req.id": parsedHAR["req.id"],
+    "req.urlRaw": parsedHAR["req.urlRaw"],
+    "req.urlClean": parsedHAR["req.urlClean"],
+    "req.urlHost": parsedHAR["req.urlHost"],
+    "req.urlPath": parsedHAR["req.urlPath"],
+    "req.urlParams": JSON.stringify(parsedHAR["req.urlParams"]),
+    "req.bodySize": parsedHAR["req.bodySize"],
+    "req.method": parsedHAR["req.method"],
+    "req.cookies": JSON.stringify(parsedHAR["req.cookies"]), //
+    "req.headers": JSON.stringify(parsedHAR["req.headers"]),
+    "req.postData": JSON.stringify(parsedHAR["req.postData"]), //
+    "resp.httpVersion": parsedHAR["resp.httpVersion"],
+    "resp.redirectURL": parsedHAR["resp.redirectURL"],
+    "resp.status": parsedHAR["resp.status"],
+    "resp.statusText": parsedHAR["resp.statusText"],
+    "resp.content": JSON.stringify(parsedHAR["resp.content"]),
+    // "head.ersSi: parsedHAR[ "head.ersSi],
+    "resp.bodySize": parsedHAR["resp.bodySize"],
+    "resp.cookies": JSON.stringify(parsedHAR["resp.cookies"]),
+    "resp.headers": JSON.stringify(parsedHAR["resp.headers"]),
+  };
+}
+
+export const HAR_ENTRIES_HEADER = [
+  { id: "req.id", title: "req.id" },
+  { id: "req.urlRaw", title: "req.urlRaw" },
+  { id: "req.urlClean", title: "req.urlClean" },
+  { id: "req.urlHost", title: "req.urlHost" },
+  { id: "req.urlPath", title: "req.urlPath" },
+  { id: "req.urlParams", title: "req.urlParams" },
+  { id: "req.bodySize", title: "req.bodySize" },
+  { id: "req.method", title: "req.method" },
+  { id: "req.cookies", title: "req.cookies" }, //
+  { id: "req.headers", title: "req.headers" },
+  { id: "req.postData", title: "req.postData" }, //
+  { id: "resp.httpVersion", title: "resp.httpVersion" },
+  { id: "resp.redirectURL", title: "resp.redirectURL" },
+  { id: "resp.status", title: "resp.status" },
+  { id: "resp.statusText", title: "resp.statusText" },
+  { id: "resp.content", title: "resp.content" },
+  // "head.ersSi,
+  { id: "resp.bodySize", title: "resp.bodySize" },
+  { id: "resp.cookies", title: "resp.cookies" },
+  { id: "resp.headers", title: "resp.headers" },
+];

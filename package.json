@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "@puppeteer/replay": "^2.10.2",
+    "csv-writer": "^1.6.0",
     "handlebars": "^4.7.7",
     "puppeteer": "^19.9.0",
     "puppeteer-har": "^1.1.2",

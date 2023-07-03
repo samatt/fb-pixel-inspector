@@ -1,6 +1,12 @@
 import fs from "fs";
+import { writeCSV } from "../src/utils.js";
 // import { getFBTrackingEvents, parseFBPixelEvent } from "../src/fb-analysis.js";
-import { parseHARObject, harParser } from "../src/harp.js";
+import {
+  parseHARObject,
+  harParser,
+  HAR_ENTRIES_HEADER,
+  stringifyEntry,
+} from "../src/harp.js";
 const HAR_FILE = JSON.parse(
   fs.readFileSync("__tests__/test-data/mylabbox/requests-merged.har", "utf-8")
 );
@@ -17,7 +23,7 @@ const HAR_FILE_3 = JSON.parse(
 );
 
 describe("HAR Parser", () => {
-  it("can parse a HAR file entries into our desired format", () => {
+  it("can parse a HAR file entries into our desired format", async () => {
     const desiredEntry = {
       // "req.id": expect.stringMatching(/\d*\.\d*|\w/),
       "req.method": expect.stringMatching(/GET|POST/),
@@ -27,7 +33,14 @@ describe("HAR Parser", () => {
     expect(
       parsedEntries[Math.floor(Math.random() * parsedEntries.length)]
     ).toMatchObject(desiredEntry);
-    fs.writeFileSync("__tests__/test.json", JSON.stringify(parsedEntries));
+
+    // FIXME: MOVE THESE OUT OF HERE
+    // fs.writeFileSync("__tests__/test.json", JSON.stringify(parsedEntries));
+    await writeCSV(
+      "__tests__/test.csv",
+      parsedEntries.map((x) => stringifyEntry(x)),
+      HAR_ENTRIES_HEADER
+    );
   });
   it("can serialize parsed HAR files", () => {});
   it("can parse requests", () => {
