@@ -1,12 +1,12 @@
 import fs from "fs";
 import { writeCSV } from "../src/utils.js";
-// import { getFBTrackingEvents, parseFBPixelEvent } from "../src/fb-analysis.js";
 import {
   parseHARObject,
   harParser,
   HAR_ENTRIES_HEADER,
   stringifyEntry,
 } from "../src/harp.js";
+
 const HAR_FILE = JSON.parse(
   fs.readFileSync("__tests__/test-data/mylabbox/requests-merged.har", "utf-8")
 );
@@ -25,7 +25,6 @@ const HAR_FILE_3 = JSON.parse(
 describe("HAR Parser", () => {
   it("can parse a HAR file entries into our desired format", async () => {
     const desiredEntry = {
-      // "req.id": expect.stringMatching(/\d*\.\d*|\w/),
       "req.method": expect.stringMatching(/GET|POST/),
       // "resp.status": expect.stringMatching(/\d{3}/),
     };
@@ -33,16 +32,35 @@ describe("HAR Parser", () => {
     expect(
       parsedEntries[Math.floor(Math.random() * parsedEntries.length)]
     ).toMatchObject(desiredEntry);
+  });
 
+  it("can serialize/deserialized parsed HAR files as json", async () => {
+    const parsedEntries = harParser(HAR_FILE);
     // FIXME: MOVE THESE OUT OF HERE
-    // fs.writeFileSync("__tests__/test.json", JSON.stringify(parsedEntries));
+
+    fs.writeFileSync("__tests__/test.json", JSON.stringify(parsedEntries));
+    const FILE_DATA = JSON.parse(
+      fs.readFileSync("__tests__/test.json", "utf-8")
+    );
+    expect(FILE_DATA).toEqual(parsedEntries);
+  });
+
+  it("can serialize parsed HAR files as csv ", async () => {
+    const parsedEntries = harParser(HAR_FILE);
+
     await writeCSV(
       "__tests__/test.csv",
       parsedEntries.map((x) => stringifyEntry(x)),
       HAR_ENTRIES_HEADER
     );
+    // TODO: WRITE THIS FUNCTION
+    // const FILE_DATA = readHarpCSV(
+    //   fs.readFileSync("__tests__/test.csv", "utf-8")
+    // );
+
+    // expect(FILE_DATA).toEqual(parsedEntries);
   });
-  it("can serialize parsed HAR files", () => {});
+
   it("can parse requests", () => {
     const desiredReq = HAR_FILE.log.entries[0];
     const desiredURL = new URL(desiredReq.request.url);
@@ -82,9 +100,11 @@ describe("HAR Parser", () => {
           x.request.postData.mimeType === "application/json"
       );
     const parsedObj = parseHARObject(desiredReq[1]);
-    expect(parsedObj["req.postData"]).toStrictEqual({
-      customerEmail: "test@test.com",
-    });
+    expect(parsedObj["req.postData"]).toStrictEqual([
+      {
+        customerEmail: "test@test.com",
+      },
+    ]);
   });
 
   it("can parse x-www-form-urlencoded POST data", () => {

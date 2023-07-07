@@ -24,10 +24,10 @@ const parseMultipartFormData = (data) => {
 function postDataParser(harEntry) {
   if (harEntry.request.bodySize == 0) {
     logger.debug("Not parsing post body since body size is 0");
-    return {};
+    return [];
   }
   if (harEntry.request.postData.mimeType.includes("text/plain")) {
-    return { text: harEntry.request.postData.text };
+    return [{ text: harEntry.request.postData.text }];
   }
   if (harEntry.request.postData.mimeType.includes("x-www-form-urlencoded")) {
     return Object.entries(
@@ -38,7 +38,7 @@ function postDataParser(harEntry) {
   ) {
     return parseMultipartFormData(harEntry.request.postData.text);
   } else if (harEntry.request.postData.mimeType.includes("application/json")) {
-    return JSON.parse(harEntry.request.postData.text);
+    return [JSON.parse(harEntry.request.postData.text)];
   } else {
     logger.warn(
       `No parser found for mimeType ${harEntry.request.postData.mimeType}`

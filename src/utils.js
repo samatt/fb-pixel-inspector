@@ -5,8 +5,5 @@ export async function writeCSV(path, data, headers) {
     path: path,
     header: headers,
   });
-  await csvWriter.writeRecords(data); // returns a promise
-  // .then(() => {
-  //   console.log("...Done");
-  // });
+  await csvWriter.writeRecords(data);
 }
